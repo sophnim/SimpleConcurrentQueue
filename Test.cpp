@@ -10,10 +10,12 @@ struct Message {
 
 FixedSizeConcurrentQueue<Message> queue(100);
 
-void enqueueFunc()
+void producer()
 {
 	while (true) {
 		Person* message = new Message();
+		
+		// create new message and enqueue
 		if (!queue.TryEnqueue(message)) {
 			// queue full
 			delete message;
@@ -21,12 +23,12 @@ void enqueueFunc()
 	}
 }
 
-void dequeueFunc()
+void consumer()
 {
 	while (true) {
 		Message* message = queue.TryDequeue();
 		if (!message) {
-			// queue is empty
+			// queue has no message
 			continue;
 		}
 		
@@ -41,11 +43,11 @@ int main()
 	thread t[10];
 
 	for (int i = 0; i < 5; ++i) {
-		t[i] = thread(enqueueFunc);
+		t[i] = thread(producer);
 	}
 
 	for (int i = 5; i < 10; ++i) {
-		t[i] = thread(dequeueFunc);
+		t[i] = thread(consumer);
 	}
 
 	for (int i = 0; i < 10; ++i) {
