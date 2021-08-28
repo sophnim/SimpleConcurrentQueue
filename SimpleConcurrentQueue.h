@@ -52,8 +52,7 @@ namespace SimpleConcurrentQueue
 			T* expected = nullptr;
 
 			do {
-				uint32_t temp = ++enqueueIndexGenerator_;
-				index = (temp % capacity_);
+				index = (++enqueueIndexGenerator_ % capacity_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++itemCount_;
@@ -75,8 +74,7 @@ namespace SimpleConcurrentQueue
 			T* desired = nullptr;
 
 			do {
-				uint32_t temp = ++dequeueIndexGenerator_;
-				index = (temp % capacity_);
+				index = (++dequeueIndexGenerator_ % capacity_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
