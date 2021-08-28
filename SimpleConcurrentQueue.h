@@ -1,4 +1,3 @@
-#include <iostream>
 #include <atomic>
 
 using namespace std;
