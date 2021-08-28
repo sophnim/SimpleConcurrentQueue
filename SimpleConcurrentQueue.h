@@ -41,9 +41,7 @@ namespace SimpleConcurrentQueue
 
 		bool TryEnqueue(T* item)
 		{
-			int space = --emptySpace_;
-			
-			if (space < 0) {
+			if (--emptySpace_ < 0) {
 				++emptySpace_;
 				return false;
 			}
@@ -62,9 +60,7 @@ namespace SimpleConcurrentQueue
 
 		T* TryDequeue()
 		{
-			int count = --itemCount_;
-			
-			if (count < 0) {
+			if (--itemCount_ < 0) {
 				++itemCount_;
 				return nullptr;
 			}
