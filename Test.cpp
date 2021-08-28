@@ -13,18 +13,19 @@ FixedSizeConcurrentQueue<Person> queue(100);
 
 void enqueueFunc()
 {
-	int count = 0;
 	while (true) {
 		Person* person = new Person();
-		queue.Enqueue(person);
+		if (!queue.TryEnqueue(person)) {
+			delete person;
+		}
 	}
 }
 
 void dequeueFunc()
 {
 	while (true) {
-		Person* person = queue.Dequeue();
-		if (person != nullptr) {
+		Person* person = queue.TryDequeue();
+		if (person) {
 			delete person;
 		}
 	}
