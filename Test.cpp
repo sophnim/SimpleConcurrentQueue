@@ -4,19 +4,19 @@
 using namespace std;
 using namespace SimpleConcurrentQueue;
 
-struct Person {
-	int age;
-	char name[12];
+struct Message {
+	char context[128];
 };
 
-FixedSizeConcurrentQueue<Person> queue(100);
+FixedSizeConcurrentQueue<Message> queue(100);
 
 void enqueueFunc()
 {
 	while (true) {
-		Person* person = new Person();
-		if (!queue.TryEnqueue(person)) {
-			delete person;
+		Person* message = new Message();
+		if (!queue.TryEnqueue(message)) {
+			// queue full
+			delete message;
 		}
 	}
 }
@@ -24,10 +24,15 @@ void enqueueFunc()
 void dequeueFunc()
 {
 	while (true) {
-		Person* person = queue.TryDequeue();
-		if (person) {
-			delete person;
+		Message* message = queue.TryDequeue();
+		if (!message) {
+			// queue is empty
+			continue;
 		}
+		
+		// do something with message
+		
+		delete message;
 	}
 }
 
