@@ -13,7 +13,7 @@ FixedSizeConcurrentQueue<Message> queue(100);
 void producer()
 {
 	while (true) {
-		Person* message = new Message();
+		Message* message = new Message();
 		
 		// create new message and enqueue
 		if (!queue.TryEnqueue(message)) {
