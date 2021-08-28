@@ -49,7 +49,7 @@ namespace SimpleConcurrentQueue
 			do {
 				uint32_t temp = ++enqueueIndexGenerator_;
 				index = (temp % capacity_);
-			} while (!queue_[index].compare_exchange_strong(expected, item));
+			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++itemCount_;
 
@@ -76,7 +76,7 @@ namespace SimpleConcurrentQueue
 				if (!expected) {
 					continue;
 				}
-			} while (!queue_[index].compare_exchange_strong(expected, desired));
+			} while (!queue_[index].compare_exchange_weak(expected, desired));
 
 			++emptySpace_;
 
