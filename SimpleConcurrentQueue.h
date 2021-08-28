@@ -27,8 +27,8 @@ namespace SimpleConcurrentQueue
 			itemCount_ = 0;
 			enqueueIndexGenerator_ = capacity - 1;
 			dequeueIndexGenerator_ = capacity - 1;
-
 			queue_ = new atomic<T*>[capacity];
+			
 			for (int i = 0; i < capacity; ++i) {
 				queue_[i] = nullptr;
 			}
@@ -37,6 +37,7 @@ namespace SimpleConcurrentQueue
 		bool TryEnqueue(T* item)
 		{
 			int space = --emptySpace_;
+			
 			if (space < 0) {
 				++emptySpace_;
 				return false;
@@ -58,9 +59,10 @@ namespace SimpleConcurrentQueue
 		T* TryDequeue()
 		{
 			int count = --itemCount_;
+			
 			if (count < 0) {
 				++itemCount_;
-				return NULL;
+				return nullptr;
 			}
 
 			uint32_t index = 0;
@@ -84,6 +86,7 @@ namespace SimpleConcurrentQueue
 		void Enqueue(T* item)
 		{
 			int tryCount = 0;
+			
 			while (!TryEnqueue(item)) {
 				std::this_thread::yield();
 			}
@@ -91,8 +94,9 @@ namespace SimpleConcurrentQueue
 
 		T* Dequeue()
 		{
-			T* item = NULL;
+			T* item = nullptr;
 			int tryCount = 0;
+			
 			while (true) {
 				item = TryDequeue();
 				if (item) {
