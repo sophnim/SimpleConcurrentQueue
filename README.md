@@ -1,2 +1,2 @@
 # SimpleConcurrentQueue
-C++ Simple Concurrent Queue 
+Simple lock-free Concurrent Queue implemented by C++ 
