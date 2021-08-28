@@ -33,6 +33,11 @@ namespace SimpleConcurrentQueue
 				queue_[i] = nullptr;
 			}
 		}
+		
+		~FixedSizeConcurrentQueue()
+		{
+			delete [] queue_;
+		}
 
 		bool TryEnqueue(T* item)
 		{
