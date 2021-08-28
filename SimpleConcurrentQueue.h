@@ -1,3 +1,8 @@
+/*
+* SimpleConcurrentQueue
+* created by sophnim. 2021-08-28
+*/
+
 #include <atomic>
 
 using namespace std;
