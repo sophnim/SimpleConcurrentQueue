@@ -15,8 +15,8 @@ namespace SimpleConcurrentQueue
 		int size_;
 		atomic<int> emptySpace_;
 		atomic<int> count_;
-		atomic<uint32_t> enqueueIndexGenerator_;
-		atomic<uint32_t> dequeueIndexGenerator_;
+		atomic<uint64_t> enqueueIndexGenerator_;
+		atomic<uint64_t> dequeueIndexGenerator_;
 		atomic<T*>* queue_;
 
 	public:
@@ -56,7 +56,7 @@ namespace SimpleConcurrentQueue
 				return false;
 			}
 
-			uint32_t index = 0;
+			uint64_t index = 0;
 			T* expected = nullptr;
 
 			do {
@@ -75,7 +75,7 @@ namespace SimpleConcurrentQueue
 				return nullptr;
 			}
 
-			uint32_t index = 0;
+			uint64_t index = 0;
 			T* expected = nullptr;
 			T* desired = nullptr;
 
