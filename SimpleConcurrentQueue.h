@@ -4,6 +4,7 @@
 */
 
 #include <atomic>
+#include <stdexcept>
 
 using namespace std;
 
@@ -22,6 +23,10 @@ namespace SimpleConcurrentQueue
 	public:
 		FixedSizeConcurrentQueue(int size)
 		{
+			if (size <= 0) {
+				throw std::out_of_range("FixedSizeConcurrentQueue: constructor invalid size parameter");
+			}
+
 			size_ = size;
 			emptySpace_ = size;
 			count_ = 0;
