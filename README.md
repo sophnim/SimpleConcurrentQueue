@@ -1,4 +1,4 @@
 # SimpleConcurrentQueue
-Simple lock-free fixed size Queue implemented by C++ 
+Simple lock-free Queue implemented by C++ 
 
 Not fully tested yet.
