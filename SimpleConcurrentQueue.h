@@ -22,7 +22,7 @@ namespace SimpleConcurrentQueue
 		FixedSizeConcurrentQueue(int size)
 		{
 			if (size <= 0) {
-				throw std::out_of_range("constructor invalid size parameter");
+				throw std::invalid_argument("constructor invalid size parameter");
 			}
 
 			size_ = size;
