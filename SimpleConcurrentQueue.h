@@ -22,7 +22,7 @@ namespace SimpleConcurrentQueue
 		FixedSizeConcurrentQueue(int size)
 		{
 			if (size <= 0) {
-				throw std::out_of_range("FixedSizeConcurrentQueue: constructor invalid size parameter");
+				throw std::out_of_range("constructor invalid size parameter");
 			}
 
 			size_ = size;
@@ -63,7 +63,12 @@ namespace SimpleConcurrentQueue
 			T* expected = nullptr;
 
 			do {
-				index = (++enqueueIndexGenerator_ % size_);
+				uint64_t temp = ++enqueueIndexGenerator_;
+				if (!temp) {
+					throw std::out_of_range("enqueueIndexGenerator_ overflow: How long did you run program???");
+				}
+
+				index = (temp % size_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++count_;
@@ -83,7 +88,12 @@ namespace SimpleConcurrentQueue
 			T* desired = nullptr;
 
 			do {
-				index = (++dequeueIndexGenerator_ % size_);
+				uint64_t temp = ++dequeueIndexGenerator_;
+				if (!temp) {
+					throw std::out_of_range("dequeueIndexGenerator_ overflow: How long did you run program???");
+				}
+
+				index = (temp % size_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
