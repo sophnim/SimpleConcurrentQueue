@@ -6,19 +6,17 @@
 #include <atomic>
 #include <stdexcept>
 
-using namespace std;
-
 namespace SimpleConcurrentQueue
 {
 	template <typename T>
 	class FixedSizeConcurrentQueue {
 	private:
 		int size_;
-		atomic<int> emptySpace_;
-		atomic<int> count_;
-		atomic<uint64_t> enqueueIndexGenerator_;
-		atomic<uint64_t> dequeueIndexGenerator_;
-		atomic<T*>* queue_;
+		std::atomic<int> emptySpace_;
+		std::atomic<int> count_;
+		std::atomic<uint64_t> enqueueIndexGenerator_;
+		std::atomic<uint64_t> dequeueIndexGenerator_;
+		std::atomic<T*>* queue_;
 
 	public:
 		FixedSizeConcurrentQueue(int size)
@@ -32,7 +30,7 @@ namespace SimpleConcurrentQueue
 			count_ = 0;
 			enqueueIndexGenerator_ = size - 1;
 			dequeueIndexGenerator_ = size - 1;
-			queue_ = new atomic<T*>[size];
+			queue_ = new std::atomic<T*>[size];
 			
 			for (int i = 0; i < size; ++i) {
 				queue_[i] = nullptr;
