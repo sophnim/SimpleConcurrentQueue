@@ -12,7 +12,7 @@ namespace SimpleConcurrentQueue
 	template <typename T>
 	class FixedSizeConcurrentQueue {
 	private:
-		int capacity_;
+		int size_;
 		atomic<int> emptySpace_;
 		atomic<int> count_;
 		atomic<uint32_t> enqueueIndexGenerator_;
@@ -20,16 +20,16 @@ namespace SimpleConcurrentQueue
 		atomic<T*>* queue_;
 
 	public:
-		FixedSizeConcurrentQueue(int capacity)
+		FixedSizeConcurrentQueue(int size)
 		{
-			capacity_ = capacity;
-			emptySpace_ = capacity;
+			size_ = size;
+			emptySpace_ = size;
 			count_ = 0;
-			enqueueIndexGenerator_ = capacity - 1;
-			dequeueIndexGenerator_ = capacity - 1;
-			queue_ = new atomic<T*>[capacity];
+			enqueueIndexGenerator_ = size - 1;
+			dequeueIndexGenerator_ = size - 1;
+			queue_ = new atomic<T*>[size];
 			
-			for (int i = 0; i < capacity; ++i) {
+			for (int i = 0; i < size; ++i) {
 				queue_[i] = nullptr;
 			}
 		}
@@ -39,9 +39,9 @@ namespace SimpleConcurrentQueue
 			delete [] queue_;
 		}
 		
-		int Capacity()
+		int Size()
 		{
-			return capacity_;
+			return size_;
 		}
 		
 		int Count()
@@ -60,7 +60,7 @@ namespace SimpleConcurrentQueue
 			T* expected = nullptr;
 
 			do {
-				index = (++enqueueIndexGenerator_ % capacity_);
+				index = (++enqueueIndexGenerator_ % size_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++count_;
@@ -80,7 +80,7 @@ namespace SimpleConcurrentQueue
 			T* desired = nullptr;
 
 			do {
-				index = (++dequeueIndexGenerator_ % capacity_);
+				index = (++dequeueIndexGenerator_ % size_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
