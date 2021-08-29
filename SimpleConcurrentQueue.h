@@ -14,7 +14,7 @@ namespace SimpleConcurrentQueue
 	private:
 		int capacity_;
 		atomic<int> emptySpace_;
-		atomic<int> itemCount_;
+		atomic<int> count_;
 		atomic<uint32_t> enqueueIndexGenerator_;
 		atomic<uint32_t> dequeueIndexGenerator_;
 		atomic<T*>* queue_;
@@ -24,7 +24,7 @@ namespace SimpleConcurrentQueue
 		{
 			capacity_ = capacity;
 			emptySpace_ = capacity;
-			itemCount_ = 0;
+			count_ = 0;
 			enqueueIndexGenerator_ = capacity - 1;
 			dequeueIndexGenerator_ = capacity - 1;
 			queue_ = new atomic<T*>[capacity];
@@ -37,6 +37,16 @@ namespace SimpleConcurrentQueue
 		~FixedSizeConcurrentQueue()
 		{
 			delete [] queue_;
+		}
+		
+		int Capacity()
+		{
+			return capacity_;
+		}
+		
+		int Count()
+		{
+			return count_;
 		}
 
 		bool TryEnqueue(T* item)
@@ -53,15 +63,15 @@ namespace SimpleConcurrentQueue
 				index = (++enqueueIndexGenerator_ % capacity_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
-			++itemCount_;
+			++count_;
 
 			return true;
 		}
 
 		T* TryDequeue()
 		{
-			if (--itemCount_ < 0) {
-				++itemCount_;
+			if (--count_ < 0) {
+				++count_;
 				return nullptr;
 			}
 
