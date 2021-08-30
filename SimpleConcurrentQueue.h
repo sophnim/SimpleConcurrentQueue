@@ -63,12 +63,7 @@ namespace SimpleConcurrentQueue
 			T* expected = nullptr;
 
 			do {
-				uint64_t temp = ++enqueueIndexGenerator_;
-				if (!temp) {
-					throw std::out_of_range("enqueueIndexGenerator_ overflow: How long did you run program???");
-				}
-
-				index = (temp % size_);
+				index = (++enqueueIndexGenerator_ % size_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++count_;
@@ -88,12 +83,7 @@ namespace SimpleConcurrentQueue
 			T* desired = nullptr;
 
 			do {
-				uint64_t temp = ++dequeueIndexGenerator_;
-				if (!temp) {
-					throw std::out_of_range("dequeueIndexGenerator_ overflow: How long did you run program???");
-				}
-
-				index = (temp % size_);
+				index = (++dequeueIndexGenerator_ % size_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
