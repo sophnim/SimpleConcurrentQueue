@@ -94,31 +94,5 @@ namespace SimpleConcurrentQueue
 
 			return expected;
 		}
-
-		void Enqueue(T* item)
-		{
-			int tryCount = 0;
-			
-			while (!TryEnqueue(item)) {
-				std::this_thread::yield();
-			}
-		}
-
-		T* Dequeue()
-		{
-			T* item = nullptr;
-			int tryCount = 0;
-			
-			while (true) {
-				item = TryDequeue();
-				if (item) {
-					break;
-				}
-
-				std::this_thread::yield();
-			}
-
-			return item;
-		}
 	};
 }
