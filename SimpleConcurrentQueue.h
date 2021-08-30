@@ -3,6 +3,9 @@
 * created by sophnim. 2021-08-28
 */
 
+#ifndef __SIMPLE_CONCURRENT_QUEUE__
+#define __SIMPLE_CONCURRENT_QUEUE__
+
 #include <atomic>
 #include <stdexcept>
 
@@ -96,3 +99,5 @@ namespace SimpleConcurrentQueue
 		}
 	};
 }
+
+#endif
