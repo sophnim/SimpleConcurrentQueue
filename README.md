@@ -1,4 +1,5 @@
 # SimpleConcurrentQueue
 Simple lock-free Queue implemented by C++ 
 
-TryEnqueue(), TryDequeue() That's all folks!
+TryEnqueue(), TryDequeue()
+That's all folks!
