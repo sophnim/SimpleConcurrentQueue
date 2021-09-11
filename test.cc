@@ -1,5 +1,5 @@
 #include <thread>
-#include "SimpleConcurrentQueue.h"
+#include "simple_concurrent_queue.h"
 
 using namespace std;
 using namespace simple_concurrent_queue;
