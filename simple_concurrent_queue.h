@@ -9,16 +9,16 @@
 #include <atomic>
 #include <stdexcept>
 
-namespace SimpleConcurrentQueue
+namespace simple_concurrent_queue
 {
 	template <typename T>
 	class FixedSizeConcurrentQueue {
 	private:
 		int size_;
-		std::atomic<int> emptySpace_;
+		std::atomic<int> empty_space_;
 		std::atomic<int> count_;
-		std::atomic<uint64_t> enqueueIndexGenerator_;
-		std::atomic<uint64_t> dequeueIndexGenerator_;
+		std::atomic<uint64_t> enqueue_index_generator_;
+		std::atomic<uint64_t> dequeue_index_generator_;
 		std::atomic<T*>* queue_;
 
 	public:
@@ -29,10 +29,10 @@ namespace SimpleConcurrentQueue
 			}
 
 			size_ = size;
-			emptySpace_ = size;
+			empty_space_ = size;
 			count_ = 0;
-			enqueueIndexGenerator_ = size - 1;
-			dequeueIndexGenerator_ = size - 1;
+			enqueue_index_generator_ = size - 1;
+			dequeue_index_generator_ = size - 1;
 			queue_ = new std::atomic<T*>[size];
 			
 			for (int i = 0; i < size; ++i) {
@@ -57,8 +57,8 @@ namespace SimpleConcurrentQueue
 
 		bool TryEnqueue(T* item)
 		{
-			if (--emptySpace_ < 0) {
-				++emptySpace_;
+			if (--empty_space_ < 0) {
+				++empty_space_;
 				return false;
 			}
 
@@ -66,7 +66,7 @@ namespace SimpleConcurrentQueue
 			T* expected = nullptr;
 
 			do {
-				index = (++enqueueIndexGenerator_ % size_);
+				index = (++enqueue_index_generator_ % size_);
 			} while (!queue_[index].compare_exchange_weak(expected, item));
 
 			++count_;
@@ -86,18 +86,18 @@ namespace SimpleConcurrentQueue
 			T* desired = nullptr;
 
 			do {
-				index = (++dequeueIndexGenerator_ % size_);
+				index = (++dequeue_index_generator_ % size_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
 				}
 			} while (!queue_[index].compare_exchange_weak(expected, desired));
 
-			++emptySpace_;
+			++empty_space_;
 
 			return expected;
 		}
 	};
 }
 
-#endif
+#endif // __SIMPLE_CONCURRENT_QUEUE__

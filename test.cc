@@ -2,7 +2,7 @@
 #include "SimpleConcurrentQueue.h"
 
 using namespace std;
-using namespace SimpleConcurrentQueue;
+using namespace simple_concurrent_queue;
 
 struct Message {
 	char context[128];
