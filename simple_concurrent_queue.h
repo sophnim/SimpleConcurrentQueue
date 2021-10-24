@@ -8,6 +8,8 @@
 
 #include <atomic>
 #include <stdexcept>
+#include <iostream>
+#include <cassert>
 
 namespace simple_concurrent_queue
 {
@@ -15,7 +17,12 @@ namespace simple_concurrent_queue
 	class ConcurrentQueueNode {
 	public:
 		T value_;
-		std::atomic<ConcurrentQueueNode*> next_;
+		std::atomic<ConcurrentQueueNode<T>*> next_;
+
+		ConcurrentQueueNode()
+		{
+			this->next_ = nullptr;
+		}
 
 		ConcurrentQueueNode(T value)
 		{
@@ -34,14 +41,28 @@ namespace simple_concurrent_queue
 	public:
 		ConcurrentQueue()
 		{
-			auto node = new ConcurrentQueueNode<T>(nullptr);
+			auto node = new ConcurrentQueueNode<T>();
+			assert(nullptr != node);
+
 			this->head_.store(node);
 			this->tail_.store(node);
 		}
 
-		void Enqueue(T value)
+		~ConcurrentQueue()
+		{
+			T value;
+			while (TryDequeue(&value));
+
+			auto node = this->head_.load();
+			delete node;
+		}
+
+		bool TryEnqueue(T value)
 		{
 			auto node = new ConcurrentQueueNode<T>(value);
+			if (nullptr == node) {
+				return false;
+			}
 
 			while (true) {
 				auto tail = this->tail_.load(std::memory_order_acquire);
@@ -55,18 +76,20 @@ namespace simple_concurrent_queue
 			}
 
 			this->size_.fetch_add(1, std::memory_order_relaxed);
+			return true;
 		}
 
-		T TryDequeue()
+		bool TryDequeue(T* ret)
 		{
 			ConcurrentQueueNode<T>* null_node = nullptr;
-			
+			T value;
+
 			while (true) {
 				auto head = this->head_.load(std::memory_order_acquire);
 				auto tail = this->tail_.load(std::memory_order_acquire);
 
 				if (head == tail) {
-					return nullptr;
+					return false;
 				}
 
 				if (nullptr == head) {
@@ -82,17 +105,20 @@ namespace simple_concurrent_queue
 					continue;
 				}
 
-				T value = head_next->value_;
+				value = head_next->value_;
 
 				if (!this->head_.compare_exchange_weak(null_node, head_next, std::memory_order_acq_rel)) {
 					continue;
 				}
 
 				delete head;
-
-				this->size_.fetch_sub(1, std::memory_order_relaxed);
-				return value;
+				break;
 			}
+
+			this->size_.fetch_sub(1, std::memory_order_relaxed);
+			*ret = value;
+
+			return true;
 		}
 
 		uint64_t Size()
@@ -103,50 +129,64 @@ namespace simple_concurrent_queue
 	};
 
 	template <typename T>
+	class FixedSizeConcurrentQueueNode {
+	public:
+		T value_;
+
+		FixedSizeConcurrentQueueNode(T value)
+		{
+			this->value_ = value;
+		}
+	};
+
+	template <typename T>
 	class FixedSizeConcurrentQueue {
 	private:
-		int size_;
+		int capacity_;
 		std::atomic<int> empty_space_;
 		std::atomic<int> count_;
 		std::atomic<uint64_t> enqueue_index_generator_;
 		std::atomic<uint64_t> dequeue_index_generator_;
-		std::atomic<T*>* queue_;
+		std::atomic<FixedSizeConcurrentQueueNode<T>*>* queue_;
 
 	public:
-		FixedSizeConcurrentQueue(int size)
+		FixedSizeConcurrentQueue(int capacity)
 		{
-			if (size <= 0) {
+			if (capacity <= 0) {
 				throw std::invalid_argument("constructor invalid size parameter");
 			}
 
-			size_ = size;
-			empty_space_ = size;
+			capacity_ = capacity;
+			empty_space_ = capacity;
 			count_ = 0;
-			enqueue_index_generator_ = size - 1;
-			dequeue_index_generator_ = size - 1;
-			queue_ = new std::atomic<T*>[size];
-			
-			for (int i = 0; i < size; ++i) {
+			enqueue_index_generator_ = capacity - 1;
+			dequeue_index_generator_ = capacity - 1;
+			queue_ = new std::atomic<FixedSizeConcurrentQueueNode<T>*>[capacity];
+
+			for (int i = 0; i < capacity; ++i) {
 				queue_[i] = nullptr;
 			}
 		}
-		
+
 		~FixedSizeConcurrentQueue()
 		{
-			delete [] queue_;
+			T value;
+			while (TryDequeue(&value));
+
+			delete[] queue_;
 		}
-		
-		int Size()
+
+		int Capacity()
 		{
-			return size_;
+			return capacity_;
 		}
-		
+
 		int Count()
 		{
 			return count_;
 		}
 
-		bool TryEnqueue(T* item)
+		bool TryEnqueue(T value)
 		{
 			if (--empty_space_ < 0) {
 				++empty_space_;
@@ -154,30 +194,31 @@ namespace simple_concurrent_queue
 			}
 
 			uint64_t index = 0;
-			T* expected = nullptr;
+			FixedSizeConcurrentQueueNode<T>* expected = nullptr;
+			FixedSizeConcurrentQueueNode<T>* node = new FixedSizeConcurrentQueueNode<T>(value);
 
 			do {
-				index = (++enqueue_index_generator_ % size_);
-			} while (!queue_[index].compare_exchange_weak(expected, item));
+				index = (++enqueue_index_generator_ % capacity_);
+			} while (!queue_[index].compare_exchange_weak(expected, node));
 
 			++count_;
 
 			return true;
 		}
 
-		T* TryDequeue()
+		bool TryDequeue(T* value)
 		{
 			if (--count_ < 0) {
 				++count_;
-				return nullptr;
+				return false;
 			}
 
 			uint64_t index = 0;
-			T* expected = nullptr;
-			T* desired = nullptr;
+			FixedSizeConcurrentQueueNode<T>* expected = nullptr;
+			FixedSizeConcurrentQueueNode<T>* desired = nullptr;
 
 			do {
-				index = (++dequeue_index_generator_ % size_);
+				index = (++dequeue_index_generator_ % capacity_);
 				expected = queue_[index];
 				if (!expected) {
 					continue;
@@ -186,7 +227,10 @@ namespace simple_concurrent_queue
 
 			++empty_space_;
 
-			return expected;
+			*value = expected->value_;
+			delete expected;
+
+			return true;
 		}
 	};
 }
