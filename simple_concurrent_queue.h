@@ -12,6 +12,99 @@
 namespace simple_concurrent_queue
 {
 	template <typename T>
+	class ConcurrentQueueNode {
+	public:
+		T value_;
+		std::atomic<ConcurrentQueueNode*> next_;
+
+		ConcurrentQueueNode(T value)
+		{
+			this->value_ = value;
+			this->next_ = nullptr;
+		}
+	};
+
+	template <typename T>
+	class ConcurrentQueue {
+	private:
+		std::atomic<ConcurrentQueueNode<T>*> head_ = nullptr;
+		std::atomic<ConcurrentQueueNode<T>*> tail_ = nullptr;
+		std::atomic<uint64_t> size_ = 0;
+
+	public:
+		ConcurrentQueue()
+		{
+			auto node = new ConcurrentQueueNode<T>(nullptr);
+			this->head_.store(node);
+			this->tail_.store(node);
+		}
+
+		void Enqueue(T value)
+		{
+			auto node = new ConcurrentQueueNode<T>(value);
+
+			while (true) {
+				auto tail = this->tail_.load(std::memory_order_acquire);
+				ConcurrentQueueNode<T>* expected = nullptr;
+				if (!tail->next_.compare_exchange_weak(expected, node, std::memory_order_acq_rel)) {
+					continue;
+				}
+
+				this->tail_.store(node, std::memory_order_release);
+				break;
+			}
+
+			this->size_.fetch_add(1, std::memory_order_relaxed);
+		}
+
+		T TryDequeue()
+		{
+			ConcurrentQueueNode<T>* null_node = nullptr;
+			T value = nullptr;
+
+			while (true) {
+				auto head = this->head_.load(std::memory_order_acquire);
+				auto tail = this->tail_.load(std::memory_order_acquire);
+
+				if (head == tail) {
+					return nullptr;
+				}
+
+				if (nullptr == head) {
+					continue;
+				}
+
+				if (!this->head_.compare_exchange_weak(head, null_node, std::memory_order_acq_rel)) {
+					continue;
+				}
+
+				auto head_next = head->next_.load(std::memory_order_acquire);
+				if (nullptr == head_next) {
+					continue;
+				}
+
+				value = head_next->value_;
+
+				if (!this->head_.compare_exchange_weak(null_node, head_next, std::memory_order_acq_rel)) {
+					continue;
+				}
+
+				delete head;
+				break;
+			}
+
+			this->size_.fetch_sub(1, std::memory_order_relaxed);
+			return value;
+		}
+
+		uint64_t Size()
+		{
+			return this->size_;
+		}
+
+	};
+
+	template <typename T>
 	class FixedSizeConcurrentQueue {
 	private:
 		int size_;
