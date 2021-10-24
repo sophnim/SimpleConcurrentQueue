@@ -60,8 +60,7 @@ namespace simple_concurrent_queue
 		T TryDequeue()
 		{
 			ConcurrentQueueNode<T>* null_node = nullptr;
-			T value = nullptr;
-
+			
 			while (true) {
 				auto head = this->head_.load(std::memory_order_acquire);
 				auto tail = this->tail_.load(std::memory_order_acquire);
@@ -83,18 +82,17 @@ namespace simple_concurrent_queue
 					continue;
 				}
 
-				value = head_next->value_;
+				T value = head_next->value_;
 
 				if (!this->head_.compare_exchange_weak(null_node, head_next, std::memory_order_acq_rel)) {
 					continue;
 				}
 
 				delete head;
-				break;
-			}
 
-			this->size_.fetch_sub(1, std::memory_order_relaxed);
-			return value;
+				this->size_.fetch_sub(1, std::memory_order_relaxed);
+				return value;
+			}
 		}
 
 		uint64_t Size()
